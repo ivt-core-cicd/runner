@@ -1,0 +1,89 @@
+name: 🏛️ IAC - Aprovisionamiento Manual de Infraestructura
+
+on:
+  workflow_dispatch:
+    inputs:
+      project_name:
+        description: 'Organización / Proyecto a inicializar'
+        required: true
+        type: choice
+        options:
+          - ivt-argos
+          - ivt-redcash
+      environment:
+        description: 'Ambiente de AWS de destino'
+        required: true
+        type: choice
+        options:
+          - development
+          - staging
+          - production
+
+jobs:
+  terraform_execution:
+    name: 🏗️ Delegar Ejecución de IAC a Script Privado
+    runs-on: ubuntu-latest
+    
+    steps:
+      # =======================================================================
+      # PASO 1: Autenticación con la GitHub App para acceder al repo privado
+      # =======================================================================
+      - name: Generar Token de Acceso Privado
+        id: get_core_token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      # =======================================================================
+      # PASO 2: Clonar el repositorio de infraestructura en la RAM efímera
+      # =======================================================================
+      - name: Descargar Repositorio IAC (Privado)
+        uses: actions/checkout@v4
+        with:
+          repository: ivt-core-cicd/templates_iac
+          token: ${{ steps.get_core_token.outputs.token }}
+          ref: main
+          path: iac-core
+
+      # =======================================================================
+      # PASO 3: Extraer las credenciales de AWS desde el Vault Cifrado
+      # =======================================================================
+      - name: Cargar Credenciales AWS en Memoria Volátil
+        env:
+          SECURE_VAULT: ${{ secrets.CORPORATE_AWS_VAULT }}
+        run: |
+          PROJ="${{ github.event.inputs.project_name }}"
+          ENV_TYPE="${{ github.event.inputs.environment }}"
+          
+          echo "🔐 Cargando llaves criptográficas para $PROJ ($ENV_TYPE)..."
+          
+          AWS_KEY=$(echo "$SECURE_VAULT" | jq -r --arg proj "$PROJ" --arg env "$ENV_TYPE" '.[$proj][$env].key')
+          AWS_SECRET=$(echo "$SECURE_VAULT" | jq -r --arg proj "$PROJ" --arg env "$ENV_TYPE" '.[$proj][$env].secret')
+          
+          if [ "$AWS_KEY" = "null" ] || [ -z "$AWS_KEY" ]; then
+            echo "🛑 ERROR CRÍTICO: No se encontraron credenciales válidas en el Vault."
+            exit 1
+          fi
+          
+          # Inyectar al entorno seguro de ejecución de la máquina virtual de GitHub
+          echo "AWS_ACCESS_KEY_ID=${AWS_KEY}" >> $GITHUB_ENV
+          echo "AWS_SECRET_ACCESS_KEY=${AWS_SECRET}" >> $GITHUB_ENV
+          echo "AWS_DEFAULT_REGION=us-east-1" >> $GITHUB_ENV
+
+      # =======================================================================
+      # PASO 4: Instalar Terraform oficial en la máquina virtual
+      # =======================================================================
+      - name: Configurar Entorno de Terraform (HashiCorp)
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.5.7"
+
+      # =======================================================================
+      # PASO 5: Ceder el control total al Script de Bash Privado
+      # =======================================================================
+      - name: Invocar Ejecutor Modular de IAC
+        run: |
+          cd iac-core
+          chmod +x run-iac.sh
+          ./run-iac.sh "${{ github.event.inputs.project_name }}" "${{ github.event.inputs.environment }}"
