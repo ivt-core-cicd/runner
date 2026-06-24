@@ -1,0 +1,55 @@
+name: 🚚 Submódulo - Entrega Continua (CD)
+
+on:
+  workflow_call:
+    inputs:
+      env_target:
+        required: true
+        type: string
+
+jobs:
+  execute_cd:
+    name: Desplegar Artefactos Multi-Cloud
+    runs-on: ubuntu-latest
+    # Vincula dinámicamente entornos protegidos (requieren aprobación visual según la rama)
+    environment: ${{ inputs.env_target == 'production' && 'main' || inputs.env_target }}
+    
+    steps:
+      - name: Descargar Paquete de Trabajo con Binarios Certificados
+        uses: actions/download-artifact@v4
+        with:
+          name: workspace-caja-negra
+          path: src
+
+      # =======================================================================
+      # PASO DE CONTROL: Inyección efímera de credenciales en RAM
+      # =======================================================================
+      - name: Extraer y Cargar Credenciales de Infraestructura en RAM
+        env:
+          SECURE_VAULT: ${{ secrets.CORPORATE_AWS_VAULT }}
+        run: |
+          PROJECT_ORG=$(jq -r '.origin_org' src/payload.json)
+          ENV_REAL=$(jq -r '.origin_env' src/payload.json)
+          
+          echo "🔐 Cargando llaves criptograficas para la organizacion: [$PROJECT_ORG] en el ambiente: [$ENV_REAL]"
+          
+          # Extraer accesos de AWS del JSON cruzando Organización + Ambiente
+          AWS_KEY=$(echo "$SECURE_VAULT" | jq -r --arg proj "$PROJECT_ORG" --arg env "$ENV_REAL" '.[$proj][$env].key')
+          AWS_SECRET=$(echo "$SECURE_VAULT" | jq -r --arg proj "$PROJECT_ORG" --arg env "$ENV_REAL" '.[$proj][$env].secret')
+          
+          # Inyectar al entorno seguro del runner
+          echo "AWS_ACCESS_KEY_ID=${AWS_KEY}" >> $GITHUB_ENV
+          echo "AWS_SECRET_ACCESS_KEY=${AWS_SECRET}" >> $GITHUB_ENV
+          echo "AWS_DEFAULT_REGION=us-east-1" >> $GITHUB_ENV
+          
+          # Pasar la variable completa para que deploy-vercel.sh extraiga su token dinámico
+          echo "SECURE_VAULT=${SECURE_VAULT}" >> $GITHUB_ENV
+
+      # =======================================================================
+      # EJECUCIÓN MULTI-PROVEEDOR HÍBRIDA
+      # =======================================================================
+      - name: Ejecutar Pipeline de Despliegue Híbrido (Bash CD)
+        run: |
+          cd src/app-code
+          chmod +x ../templates-cicd/run-cd.sh
+          ../templates-cicd/run-cd.sh ../payload.json "${{ inputs.env_target }}"

@@ -1,0 +1,114 @@
+name: Orquestador Central Multi-Cloud y Multi-Stack
+
+on:
+  repository_dispatch:
+    types: [deploy_trigger]
+jobs:
+  orchestrator_init:
+    name: 🚀 1. Inicializar RAM y Descargar Componentes
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.client_payload.origin_branch == 'production' && 'main' || 'development' }}
+
+    steps:
+      # =======================================================================
+      # PASO 0: Control de accesos mediante Variable de Organización (Lista Blanca)
+      # =======================================================================
+      - name: Validar Organización Emisora Autorizada
+        env:
+          ALLOWED_LIST: ${{ vars.ALLOWED_ORGANIZATIONS }}
+        run: |
+          ORG_EMISORA="${{ github.event.client_payload.origin_org }}"
+          echo "🔍 Evaluando peticion de la organizacion: $ORG_EMISORA"
+          
+          if [ -z "$ALLOWED_LIST" ]; then
+            echo "🛑 ERROR CRÍTICO: La variable organizacional ALLOWED_ORGANIZATIONS esta vacia."
+            exit 1
+          fi
+          
+          # Convertimos comas en espacios para validar de forma nativa en Bash
+          if [[ " ${ALLOWED_LIST//,/ } " =~ " $ORG_EMISORA " ]]; then
+            echo "✅ Organizacion [$ORG_EMISORA] autorizada con exito."
+          else
+            echo "🛑 ERROR CRÍTICO: Organizacion [$ORG_EMISORA] NO autorizada en la lista blanca."
+            exit 1
+          fi
+
+      #######################################################################  
+      ##  PASO 1. Autenticación automática con la GitHub App (.pem)    ######
+      #######################################################################
+      - name: Generar Token de Accesos
+        id: get_token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+        # owner: ${{ github.repository_owner }} # Apunta automáticamente a la Central
+
+      #######################################################################  
+      ##  PASO 2. Descarga codigo del repositorio  privado             ######
+      #######################################################################
+      - name: Descargar Codigo Origen
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.client_payload.origin_repo }}
+          token: ${{ steps.get_token.outputs.token }}
+          ref: ${{ github.event.client_payload.origin_ref }}   
+          path: src/app-code 
+
+      #######################################################################  
+      ##  PASO 3. Descarga templates  de despleigue cicd               ######
+      #######################################################################
+      - name: Descargar plantillas de despliegue ci/cd
+        uses: actions/checkout@v4
+        with:
+          repository: ivt-core-cicd/templates_cicd
+          token: ${{ steps.get_token.outputs.token }}
+          ref: ${{ github.event.client_payload.origin_ref }}   
+          path: src/templates-cicd
+    
+      ######################################################################## 
+      ## PASO 4: Inyección del Payload JSON de control                    ####
+      ########################################################################
+      - name: Inyectar Datos del Evento de Control
+        run: |
+          echo '${{ toJson(github.event.client_payload) }}' > src/payload.json
+
+      #######################################################################  
+      ##  PASO 4. Descarga templates de aprovicionamiento con iac      ######
+      #######################################################################
+      - name: Descargar plantillas iac
+        uses: actions/checkout@v4
+        with:
+          repository: ivt-core-cicd/templates_iac
+          token: ${{ steps.get_token.outputs.token }}
+          ref: ${{ github.event.client_payload.origin_ref }}   
+          path: src/templates-iac
+
+        
+      #######################################################################  
+      ##  PASO 5. Guardar el codigo en un Artefacto unico              ######
+      #######################################################################
+      - name: Guardar Artefacto  de codigos
+        uses: actions/upload-artifact@v4
+        with:
+          name: repos-ready-package
+          path: src/
+          retention-days: 1
+
+
+  # =======================================================================
+  # PASO 6: Delegación en cascada a los submódulos especializados
+  # =======================================================================
+  run_ci:
+    name: 🧪 2. Integración Continua
+    needs: orchestrator_init
+    uses: ./.github/workflows/ci_orchestrator.yml
+    secrets: inherit
+
+  run_cd:
+    name: 🚚 3. Entrega Continua Híbrida
+    needs: run_ci
+    uses: ./.github/workflows/cd_orchestrator.yml
+    with:
+      env_target: ${{ github.event.client_payload.origin_env }}
+    secrets: inherit

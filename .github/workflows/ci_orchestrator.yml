@@ -1,0 +1,29 @@
+name: 🧪 Submódulo - Integración Continua (CI)
+
+on:
+  workflow_call:
+
+jobs:
+  execute_ci:
+    name: Analizar y Compilar Componente
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar Paquete Inmutable de Trabajo
+        uses: actions/download-artifact@v4
+        with:
+          name: workspace-caja-negra
+          path: src
+
+      - name: Ejecutar Pipeline Modular de Compilación (Bash CI)
+        run: |
+          cd src/app-code
+          chmod +x ../templates-cicd/run-ci.sh
+          ../templates-cicd/run-ci.sh ../payload.json
+
+      - name: Actualizar Paquete Inmutable con Binarios Compilados
+        uses: actions/upload-artifact@v4
+        with:
+          name: workspace-caja-negra
+          path: src/
+          overwrite: true
+          retention-days: 1
