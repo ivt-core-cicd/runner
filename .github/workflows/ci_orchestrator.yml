@@ -19,11 +19,16 @@ jobs:
           path: src/
           run-id: ${{ inputs.parent_run_id }}
 
-      - name: Ejecutar Pipeline Modular de Compilación (Bash CI)
+      - name: Ejecutar Ciclo de Integración Continua Genérico [run_ci]
         run: |
-          cd src/app-code
-          chmod +x ../templates-cicd/run-ci.sh
-          ../templates-cicd/run-ci.sh ../payload.json
+          # 1. Asegurar permisos de ejecución de forma absoluta usando variables del Runner
+          chmod +x $GITHUB_WORKSPACE/src/templates-cicd/*.sh
+
+          # 2. Posicionarse en el código de la app
+          cd $GITHUB_WORKSPACE/src/app-code
+
+          # 3. Lanzar el enrutador maestro pasando el payload
+          $GITHUB_WORKSPACE/src/templates-cicd/run-ci.sh $GITHUB_WORKSPACE/src/payload.json
 
       - name: Actualizar Paquete Inmutable con Binarios Compilados
         uses: actions/upload-artifact@v4
