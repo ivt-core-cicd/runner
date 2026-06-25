@@ -102,7 +102,7 @@ jobs:
       - name: Guardar Artefacto  de codigos
         uses: actions/upload-artifact@v4
         with:
-          name: repos-ready-package
+          name: workspace-package
           path: src/
           retention-days: 1
 

@@ -15,8 +15,8 @@ jobs:
       - name: Descargar Paquete Inmutable de Trabajo
         uses: actions/download-artifact@v4
         with:
-          name: workspace-caja-negra
-          path: src
+          name: workspace-package
+          path: src/
           run-id: ${{ inputs.parent_run_id }}
 
       - name: Ejecutar Pipeline Modular de Compilación (Bash CI)
