@@ -50,9 +50,9 @@ jobs:
       - name: Descargar Codigo Origen
         uses: actions/checkout@v4
         with:
-          repository: ${{ github.event.client_payload.origin_repo }}
+          repository: ${{ github.event.client_payload.origin.repo }}
           token: ${{ steps.get_token.outputs.token }}
-          ref: ${{ github.event.client_payload.origin_ref }}   
+          ref: ${{ github.event.client_payload.origin.ref }}   
           path: src/app-code 
 
       #######################################################################  
