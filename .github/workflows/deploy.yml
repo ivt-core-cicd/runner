@@ -63,7 +63,7 @@ jobs:
         with:
           repository: ivt-core-cicd/templates_cicd
           token: ${{ steps.get_token.outputs.token }}
-          ref: ${{ github.event.client_payload.origin_ref }}   
+          ref: main  
           path: src/templates-cicd
     
       ######################################################################## 
@@ -81,7 +81,7 @@ jobs:
         with:
           repository: ivt-core-cicd/templates_iac
           token: ${{ steps.get_token.outputs.token }}
-          ref: ${{ github.event.client_payload.origin_ref }}   
+          ref: main 
           path: src/templates-iac
 
         
