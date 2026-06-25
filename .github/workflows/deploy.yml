@@ -111,7 +111,7 @@ jobs:
   # PASO 7: Delegación en cascada a los submódulos especializados
   # =======================================================================
   run_ci:
-    name: 🧪 2. Integración Continua
+    name: 2. Integración Continua [CI Orquestador - ${{ github.repository_owner }} ] 
     needs: orchestrator_init
     uses: ./.github/workflows/ci_orchestrator.yml
     with:
@@ -120,7 +120,7 @@ jobs:
     secrets: inherit
 
   run_cd:
-    name: 🚚 3. Entrega Continua Híbrida
+    name: 3. Entrega Continua Híbrida [CD Orquestador - ${{ github.repository_owner }} ]
     needs: run_ci
     uses: ./.github/workflows/cd_orchestrator.yml
     with:

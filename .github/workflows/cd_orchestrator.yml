@@ -1,4 +1,4 @@
-name: 🚚 Submódulo - Entrega Continua (CD)
+name: Submódulo - Entrega Continua (CD)
 
 on:
   workflow_call:
@@ -12,48 +12,36 @@ on:
 
 jobs:
   execute_cd:
-    name: Desplegar Artefactos Multi-Cloud
+    name: Desplegar Artefactos Multi-Cloud [CD Orquestador - ${{ github.repository_owner }} ]
     runs-on: ubuntu-latest
-    # Vincula dinámicamente entornos protegidos (requieren aprobación visual según la rama)
+    # Vincula entornos protegidos de forma dinámica
     environment: ${{ inputs.env_target == 'production' && 'main' || inputs.env_target }}
     
     steps:
+      # =======================================================================
+      # PASO 1: Descargar el paquete unificado (Mismo nombre que el maestro)
+      # =======================================================================
       - name: Descargar Paquete de Trabajo con Binarios Certificados
         uses: actions/download-artifact@v4
         with:
-          name: workspace-caja-negra
+          name: workspace-package # 🎯 Sincronizado con el maestro
           path: src
           run-id: ${{ inputs.parent_run_id }}
 
       # =======================================================================
-      # PASO DE CONTROL: Inyección efímera de credenciales en RAM
-      # =======================================================================
-      - name: Extraer y Cargar Credenciales de Infraestructura en RAM
-        env:
-          SECURE_VAULT: ${{ secrets.CORPORATE_AWS_VAULT }}
-        run: |
-          PROJECT_ORG=$(jq -r '.origin_org' src/payload.json)
-          ENV_REAL=$(jq -r '.origin_env' src/payload.json)
-          
-          echo "🔐 Cargando llaves criptograficas para la organizacion: [$PROJECT_ORG] en el ambiente: [$ENV_REAL]"
-          
-          # Extraer accesos de AWS del JSON cruzando Organización + Ambiente
-          AWS_KEY=$(echo "$SECURE_VAULT" | jq -r --arg proj "$PROJECT_ORG" --arg env "$ENV_REAL" '.[$proj][$env].key')
-          AWS_SECRET=$(echo "$SECURE_VAULT" | jq -r --arg proj "$PROJECT_ORG" --arg env "$ENV_REAL" '.[$proj][$env].secret')
-          
-          # Inyectar al entorno seguro del runner
-          echo "AWS_ACCESS_KEY_ID=${AWS_KEY}" >> $GITHUB_ENV
-          echo "AWS_SECRET_ACCESS_KEY=${AWS_SECRET}" >> $GITHUB_ENV
-          echo "AWS_DEFAULT_REGION=us-east-1" >> $GITHUB_ENV
-          
-          # Pasar la variable completa para que deploy-vercel.sh extraiga su token dinámico
-          echo "SECURE_VAULT=${SECURE_VAULT}" >> $GITHUB_ENV
-
-      # =======================================================================
-      # EJECUCIÓN MULTI-PROVEEDOR HÍBRIDA
+      # PASO 2: Ejecución Multi-Proveedor Híbrida 100% Delegada
       # =======================================================================
       - name: Ejecutar Pipeline de Despliegue Híbrido (Bash CD)
+        env:
+          # Inyectamos el Vault completo como variable de entorno segura en RAM
+          # Los scripts de Bash se encargarán de parsearlo internamente
+          SECURE_VAULT: ${{ secrets.CORPORATE_AWS_VAULT }}
         run: |
-          cd src/app-code
-          chmod +x ../templates-cicd/run-cd.sh
-          ../templates-cicd/run-cd.sh ../payload.json "${{ inputs.env_target }}"
+          # 1. Asegurar permisos de ejecución de forma absoluta usando variables de entorno de GitHub
+          chmod +x $GITHUB_WORKSPACE/src/templates-cicd/*.sh
+          
+          # 2. Posicionarse en el código de la aplicación
+          cd $GITHUB_WORKSPACE/src/app-code
+          
+          # 3. Delegar la orquestación pasando el payload y el entorno meta
+          $GITHUB_WORKSPACE/src/templates-cicd/run-cd.sh $GITHUB_WORKSPACE/src/payload.json "${{ inputs.env_target }}"
