@@ -17,7 +17,7 @@ jobs:
         env:
           ALLOWED_LIST: ${{ vars.ALLOWED_ORGANIZATIONS }}
         run: |
-          ORG_EMISORA="${{ github.event.client_payload.origin.org }}"
+          ORG_EMISORA="${{ github.event.client_payload.origin.owner }}"
           echo "🔍 Evaluando peticion de la organizacion: $ORG_EMISORA"
           
           if [ -z "$ALLOWED_LIST" ]; then
