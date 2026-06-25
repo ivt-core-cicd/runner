@@ -36,8 +36,8 @@ jobs:
       #######################################################################  
       ##  PASO 1. Autenticación automática con la GitHub App (.pem)    ######
       #######################################################################
-      - name: Generar Token de Accesos
-        id: get_token
+      - name: Generar Token de Accesos para descarga de codigo desde ${{ github.event.client_payload.origin.owner }}.
+        id: get_token_repo_org_origin
         uses: actions/create-github-app-token@v1
         with:
           app-id: ${{ secrets.APP_ID }}
@@ -51,9 +51,20 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ${{ github.event.client_payload.origin.repo }}
-          token: ${{ steps.get_token.outputs.token }}
+          token: ${{ steps.get_token_repo_org_origin.outputs.token }}
           ref: ${{ contains(github.event.client_payload.origin.ref, '/') && github.event.client_payload.origin.ref || format('refs/tags/{0}', github.event.client_payload.origin.ref) }}  
           path: src/app-code 
+
+      #######################################################################  
+      ##  PASO 3. Autenticación automática con la GitHub App (.pem)    ######
+      #######################################################################
+      - name: Generar Token de Accesos para plantillas ${{ github.repository_owner }}.
+        id: get_token_org_core
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }} # Apunta automáticamente a la organización donde es llamada.
 
       #######################################################################  
       ##  PASO 3. Descarga templates  de despleigue cicd               ######
@@ -62,7 +73,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ivt-core-cicd/templates_cicd
-          token: ${{ steps.get_token.outputs.token }}
+          token: ${{ steps.get_token_org_core.outputs.token }}
           ref: main  
           path: src/templates-cicd
     
@@ -74,19 +85,19 @@ jobs:
           echo '${{ toJson(github.event.client_payload) }}' > src/payload.json
 
       #######################################################################  
-      ##  PASO 4. Descarga templates de aprovicionamiento con iac      ######
+      ##  PASO 5. Descarga templates de aprovicionamiento con iac      ######
       #######################################################################
       - name: Descargar plantillas iac
         uses: actions/checkout@v4
         with:
           repository: ivt-core-cicd/templates_iac
-          token: ${{ steps.get_token.outputs.token }}
+          token: ${{ steps.get_token_org_core.outputs.token }}
           ref: main 
           path: src/templates-iac
 
         
       #######################################################################  
-      ##  PASO 5. Guardar el codigo en un Artefacto unico              ######
+      ##  PASO 6. Guardar el codigo en un Artefacto unico              ######
       #######################################################################
       - name: Guardar Artefacto  de codigos
         uses: actions/upload-artifact@v4
@@ -97,7 +108,7 @@ jobs:
 
 
   # =======================================================================
-  # PASO 6: Delegación en cascada a los submódulos especializados
+  # PASO 7: Delegación en cascada a los submódulos especializados
   # =======================================================================
   run_ci:
     name: 🧪 2. Integración Continua
