@@ -6,6 +6,9 @@ on:
       env_target:
         required: true
         type: string
+      parent_run_id:
+        required: true
+        type: string
 
 jobs:
   execute_cd:
@@ -20,6 +23,7 @@ jobs:
         with:
           name: workspace-caja-negra
           path: src
+          run-id: ${{ inputs.parent_run_id }}
 
       # =======================================================================
       # PASO DE CONTROL: Inyección efímera de credenciales en RAM

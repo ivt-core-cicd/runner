@@ -114,6 +114,9 @@ jobs:
     name: 🧪 2. Integración Continua
     needs: orchestrator_init
     uses: ./.github/workflows/ci_orchestrator.yml
+    with:
+      # Pasamos el ID de la ejecución actual de forma nativa
+      parent_run_id: ${{ github.run_id }}
     secrets: inherit
 
   run_cd:
@@ -121,5 +124,7 @@ jobs:
     needs: run_ci
     uses: ./.github/workflows/cd_orchestrator.yml
     with:
+      # Pasamos el ID de la ejecución actual de forma nativa
+      parent_run_id: ${{ github.run_id }}
       env_target: ${{ github.event.client_payload.origin_env }}
     secrets: inherit

@@ -2,6 +2,10 @@ name: 🧪 Submódulo - Integración Continua (CI)
 
 on:
   workflow_call:
+    inputs:
+      parent_run_id:
+        required: true
+        type: string
 
 jobs:
   execute_ci:
@@ -13,6 +17,7 @@ jobs:
         with:
           name: workspace-caja-negra
           path: src
+          run-id: ${{ inputs.parent_run_id }}
 
       - name: Ejecutar Pipeline Modular de Compilación (Bash CI)
         run: |
