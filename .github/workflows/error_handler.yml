@@ -46,3 +46,19 @@ jobs:
               "description": "Fallo crítico en el paso: [${{ inputs.failed_job }}]. Revisa los logs centrales.",
               "context": "Core-Engine / Multi-Cloud"
             }'
+
+     # 3. CREAR EL ISSUE AUTOMÁTICO EN EL REPO DEL CLIENTE
+      - name: Crear Issue de Error en el Repositorio de Origen
+        run: |
+          # Formateamos el cuerpo del Issue usando Markdown para que se vea profesional
+          ISSUE_BODY="### 🚨 Fallo Detectado en el Orquestador Central\n\nEl despliegue automático ha fallado en la infraestructura central.\n\n* **Fase del fallo:** \`${{ inputs.failed_job }}\`\n* **Commit SHA:** \`${{ inputs.origin_sha }}\`\n* **ID de Ejecución:** \`${{ inputs.parent_run_id }}\`\n\n[🔍 Hacer clic aquí para ver los Logs del Error](https://github.com/${{ github.repository }}/actions/runs/${{ inputs.parent_run_id }})\n\n_Por favor, revisa la configuración o contacta al equipo de DevOps de la plataforma._"
+
+          curl -X POST \
+            -H "Authorization: Bearer ${{ steps.get_token_client.outputs.token }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/${{ inputs.origin_repo }}/issues \
+            -d "{
+              \"title\": \"🛑 [FALLO DE DESPLIEGUE] Error en ${{ inputs.failed_job }}\",
+              \"body\": \"$ISSUE_BODY\",
+              \"labels\": [\"bug\", \"automated-alert\", \"devops\"]
+            }"
