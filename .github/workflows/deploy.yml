@@ -128,3 +128,43 @@ jobs:
       parent_run_id: ${{ github.run_id }}
       env_target: ${{ github.event.client_payload.origin_env }}
     secrets: inherit
+
+ # ... (Tus jobs orchestrator_init, run_ci y run_cd se quedan tal cual los tienes) ...
+
+  catch_errors:
+    name: 🚨 Capturador Global de Errores
+    needs: [orchestrator_init, run_ci, run_cd]
+    # 🔥 CLAVE: Solo se ejecuta si ALGUNO de los 3 jobs anteriores falló o fue cancelado
+    if: failure() || cancelled() 
+    runs-on: ubuntu-latest
+    steps:
+      # Usamos el token interno del Core porque le vamos a pegar a nuestro propio repositorio
+      - name: Generar Token Core Central
+        id: get_core_token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - name: Disparar Handler de Errores (Fire & Forget)
+        run: |
+          # Detectamos rápidamente cuál de los jobs fue el que se rompió
+          FAILED_STEP="Desconocido"
+          if [ "${{ needs.orchestrator_init.result }}" = "failure" ]; then FAILED_STEP="1. Inicializar RAM"; fi
+          if [ "${{ needs.run_ci.result }}" = "failure" ]; then FAILED_STEP="2. Integracion Continua"; fi
+          if [ "${{ needs.run_cd.result }}" = "failure" ]; then FAILED_STEP="3. Entrega Continua"; fi
+
+          curl -X POST \
+            -H "Authorization: Bearer ${{ steps.get_core_token.outputs.token }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/error_handler.yml/dispatches \
+            -d '{
+              "ref": "main",
+              "inputs": {
+                "origin_owner": "${{ github.event.client_payload.origin.owner }}",
+                "origin_repo": "${{ github.event.client_payload.origin.repo }}",
+                "origin_sha": "${{ github.event.client_payload.origin.sha }}",
+                "failed_job": "'"$FAILED_STEP"'",
+                "parent_run_id": "${{ github.run_id }}"
+              }
+            }'

@@ -1,0 +1,48 @@
+name: 🚨 Core Engine - Error Handler
+
+on:
+  workflow_dispatch:
+    inputs:
+      origin_owner:
+        required: true
+        type: string
+      origin_repo:
+        required: true
+        type: string
+      origin_sha:
+        required: true
+        type: string
+      failed_job:
+        required: true
+        type: string
+      parent_run_id:
+        required: true
+        type: string
+
+jobs:
+  report_error:
+    name: ❌ Reportar Falla a ${{ inputs.origin_owner }}
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Generamos el token apuntando dinámicamente a la Org del cliente (ej: ivt-redcash)
+      - name: Generar Token para Cliente
+        id: get_token_client
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: ${{ inputs.origin_owner }}
+
+      # 2. Le clavamos la cruz roja al commit del cliente con el detalle del error
+      - name: Enviar Estatus de Falla
+        run: |
+          curl -X POST \
+            -H "Authorization: Bearer ${{ steps.get_token_client.outputs.token }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/${{ inputs.origin_repo }}/statuses/${{ inputs.origin_sha }} \
+            -d '{
+              "state": "failure",
+              "target_url": "https://github.com/${{ github.repository }}/actions/runs/${{ inputs.parent_run_id }}",
+              "description": "Fallo crítico en el paso: [${{ inputs.failed_job }}]. Revisa los logs centrales.",
+              "context": "Core-Engine / Multi-Cloud"
+            }'
