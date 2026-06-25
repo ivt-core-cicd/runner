@@ -16,7 +16,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: workspace-package
-          path: src/
+          path: .
           run-id: ${{ inputs.parent_run_id }}
 
       - name: Ejecutar Ciclo de Integración Continua Genérico [run_ci]
@@ -34,6 +34,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: workspace-package
-          path: src/
+          path: .
           overwrite: true
           retention-days: 1

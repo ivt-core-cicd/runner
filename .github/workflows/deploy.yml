@@ -5,7 +5,7 @@ on:
     types: [deploy_trigger]
 jobs:
   orchestrator_init:
-    name: 🚀 1. Inicializar RAM y Descargar Componentes
+    name: 🚀 1. Inicializar Descargar Componentes en RAM
     runs-on: ubuntu-latest
     environment: ${{ github.event.client_payload.origin_branch == 'production' && 'main' || 'development' }}
 
@@ -19,12 +19,13 @@ jobs:
         run: |
           ORG_EMISORA="${{ github.event.client_payload.origin.owner }}"
           echo "🔍 Evaluando peticion de la organizacion: $ORG_EMISORA"
-          
+
           if [ -z "$ALLOWED_LIST" ]; then
             echo "🛑 ERROR CRÍTICO: La variable organizacional ALLOWED_ORGANIZATIONS esta vacia."
+            echo "Solucion agrega tu organización a las variables del repositorio central."
             exit 1
           fi
-          
+
           # Convertimos comas en espacios para validar de forma nativa en Bash
           if [[ " ${ALLOWED_LIST//,/ } " =~ " $ORG_EMISORA " ]]; then
             echo "✅ Organizacion [$ORG_EMISORA] autorizada con exito."
@@ -33,7 +34,7 @@ jobs:
             exit 1
           fi
 
-      #######################################################################  
+      #######################################################################
       ##  PASO 1. Autenticación automática con la GitHub App (.pem)    ######
       #######################################################################
       - name: Generar Token de Accesos para descarga de codigo desde ${{ github.event.client_payload.origin.owner }}.
@@ -44,7 +45,7 @@ jobs:
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
           owner: ${{ github.event.client_payload.origin.owner }} # Apunta automáticamente a la organización donde es llamada.
 
-      #######################################################################  
+      #######################################################################
       ##  PASO 2. Descarga codigo del repositorio  privado             ######
       #######################################################################
       - name: Descargar Codigo Origen
@@ -52,10 +53,10 @@ jobs:
         with:
           repository: ${{ github.event.client_payload.origin.repo }}
           token: ${{ steps.get_token_repo_org_origin.outputs.token }}
-          ref: ${{ contains(github.event.client_payload.origin.ref, '/') && github.event.client_payload.origin.ref || format('refs/tags/{0}', github.event.client_payload.origin.ref) }}  
-          path: src/app-code 
+          ref: ${{ contains(github.event.client_payload.origin.ref, '/') && github.event.client_payload.origin.ref || format('refs/tags/{0}', github.event.client_payload.origin.ref) }}
+          path: src/app-code
 
-      #######################################################################  
+      #######################################################################
       ##  PASO 3. Autenticación automática con la GitHub App (.pem)    ######
       #######################################################################
       - name: Generar Token de Accesos para plantillas ${{ github.repository_owner }}.
@@ -66,7 +67,7 @@ jobs:
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }} # Apunta automáticamente a la organización donde es llamada.
 
-      #######################################################################  
+      #######################################################################
       ##  PASO 3. Descarga templates  de despleigue cicd               ######
       #######################################################################
       - name: Descargar plantillas de despliegue ci/cd
@@ -74,17 +75,17 @@ jobs:
         with:
           repository: ivt-core-cicd/templates_cicd
           token: ${{ steps.get_token_org_core.outputs.token }}
-          ref: main  
+          ref: main
           path: src/templates-cicd
-    
-      ######################################################################## 
+
+      ########################################################################
       ## PASO 4: Inyección del Payload JSON de control                    ####
       ########################################################################
       - name: Inyectar Datos del Evento de Control
         run: |
           echo '${{ toJson(github.event.client_payload) }}' > src/payload.json
 
-      #######################################################################  
+      #######################################################################
       ##  PASO 5. Descarga templates de aprovicionamiento con iac      ######
       #######################################################################
       - name: Descargar plantillas iac
@@ -92,26 +93,24 @@ jobs:
         with:
           repository: ivt-core-cicd/templates_iac
           token: ${{ steps.get_token_org_core.outputs.token }}
-          ref: main 
+          ref: main
           path: src/templates-iac
 
-        
-      #######################################################################  
+      #######################################################################
       ##  PASO 6. Guardar el codigo en un Artefacto unico              ######
       #######################################################################
       - name: Guardar Artefacto  de codigos
         uses: actions/upload-artifact@v4
         with:
           name: workspace-package
-          path: src/
+          path: .
           retention-days: 1
-
 
   # =======================================================================
   # PASO 7: Delegación en cascada a los submódulos especializados
   # =======================================================================
   run_ci:
-    name: 2. Integración Continua [CI Orquestador - ${{ github.repository_owner }} ] 
+    name: 2. Integración Continua [CI Orquestador - ${{ github.repository_owner }} ]
     needs: orchestrator_init
     uses: ./.github/workflows/ci_orchestrator.yml
     with:
@@ -126,17 +125,19 @@ jobs:
     with:
       # Pasamos el ID de la ejecución actual de forma nativa
       parent_run_id: ${{ github.run_id }}
-      env_target: ${{ github.event.client_payload.origin_env }}
+      env_target: ${{ github.event.client_payload.origin.env }}
     secrets: inherit
 
- # ... (Tus jobs orchestrator_init, run_ci y run_cd se quedan tal cual los tienes) ...
+  # ... (Tus jobs orchestrator_init, run_ci y run_cd se quedan tal cual los tienes) ...
 
   catch_errors:
-    name: 🚨 Capturador Global de Errores
+    name: Capturador Global de Errores
     needs: [orchestrator_init, run_ci, run_cd]
     # 🔥 CLAVE: Solo se ejecuta si ALGUNO de los 3 jobs anteriores falló o fue cancelado
-    if: failure() || cancelled() 
+    if: failure() || cancelled()
     runs-on: ubuntu-latest
+    permissions:
+      actions: write
     steps:
       # Usamos el token interno del Core porque le vamos a pegar a nuestro propio repositorio
       - name: Generar Token Core Central
