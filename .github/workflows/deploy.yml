@@ -127,6 +127,7 @@ jobs:
   run_cd:
     name: 3. Entrega Continua Híbrida [CD Orquestador - ${{ github.repository_owner }} ]
     needs: [orchestrator_init, run_ci]
+    environment: ${{ github.event.client_payload.origin_branch == 'production' && 'main' || 'development' }}
     uses: ./.github/workflows/cd_orchestrator.yml
     with:
       # Pasamos el ID de la ejecución actual de forma nativa
