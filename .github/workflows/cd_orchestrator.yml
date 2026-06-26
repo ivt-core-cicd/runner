@@ -9,11 +9,6 @@ on:
       parent_run_id:
         required: true
         type: string
-    secrets:
-      SECURE_VAULT:
-        required: true
-      TOKEN_REPO_ORIGINAL:
-        required: true
 
 jobs:
   execute_cd:
@@ -33,6 +28,13 @@ jobs:
           name: workspace-package # 🎯 Sincronizado con el maestro
           path: .
           run-id: ${{ inputs.parent_run_id }}
+      
+      - name: Cargar Token de Aplicación desde Artefacto
+        id: load_token
+        run: |
+          TOKEN_APP=$(cat .token_github_repo_original_tmp)
+          echo "token_github_repo_original=$TOKEN_APP" >> $GITHUB_OUTPUT
+          rm .token_github_repo_original_tmp # Lo eliminamos inmediatamente por seguridad
 
       # =======================================================================
       # PASO 2: Ejecución Multi-Proveedor Híbrida 100% Delegada
@@ -42,7 +44,7 @@ jobs:
           # Inyectamos el Vault completo como variable de entorno segura en RAM
           # Los scripts de Bash se encargarán de parsearlo internamente
           SECURE_VAULT: ${{ secrets.SECURE_VAULT }}
-          TOKEN_REPO_ORIGINAL: ${{ secrets.TOKEN_REPO_ORIGINAL }}
+          TOKEN_REPO_ORIGINAL: ${{ steps.load_token.outputs.token_github_repo_original }}
         run: |
           # 1. Asegurar permisos de ejecución de forma absoluta usando variables de entorno de GitHub
           chmod +x $GITHUB_WORKSPACE/src/templates-cicd/*.sh

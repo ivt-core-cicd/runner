@@ -13,8 +13,6 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ github.event.client_payload.origin_branch == 'production' && 'main' || 'development' }}
 
-    outputs:
-      token_github_repo_original: ${{ steps.get_token_repo_org_origin.outputs.token }}
     steps:
       # =======================================================================
       # PASO 0: Control de accesos mediante Variable de Organización (Lista Blanca)
@@ -51,6 +49,11 @@ jobs:
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
           owner: ${{ github.event.client_payload.origin.owner }} # Apunta automáticamente a la organización donde es llamada.
 
+
+      - name: Persistir Token Dinámico en Archivo Temporal
+        run: |
+          echo "${{ steps.get_token_repo_org_origin.outputs.token }}" > .token_github_repo_original_tmp
+
       #######################################################################
       ##  PASO 2. Descarga codigo del repositorio  privado             ######
       #######################################################################
@@ -61,6 +64,8 @@ jobs:
           token: ${{ steps.get_token_repo_org_origin.outputs.token }}
           ref: ${{ contains(github.event.client_payload.origin.ref, '/') && github.event.client_payload.origin.ref || format('refs/tags/{0}', github.event.client_payload.origin.ref) }}
           path: src/app-code
+
+      
 
       #######################################################################
       ##  PASO 3. Autenticación automática con la GitHub App (.pem)    ######
@@ -126,17 +131,16 @@ jobs:
 
   run_cd:
     name: 3. Entrega Continua Híbrida [CD Orquestador - ${{ github.repository_owner }} ]
-    needs: [orchestrator_init, run_ci]
-    environment: ${{ github.event.client_payload.origin_branch == 'production' && 'main' || 'development' }}
+    needs: run_ci
+    
     uses: ./.github/workflows/cd_orchestrator.yml
     with:
       # Pasamos el ID de la ejecución actual de forma nativa
       parent_run_id: ${{ github.run_id }}
       env_target: ${{ github.event.client_payload.origin.env }}
-    secrets: 
-      SECURE_VAULT: ${{ secrets.SECURE_VAULT }}
-      TOKEN_REPO_ORIGINAL: ${{ needs.orchestrator_init.outputs.token_github_repo_original }}
-
+    secrets: inherit
+   
+  
   catch_errors:
     name: Capturador Global de Errores
     needs: [orchestrator_init, run_ci, run_cd]
