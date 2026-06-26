@@ -35,7 +35,7 @@ jobs:
         env:
           # Inyectamos el Vault completo como variable de entorno segura en RAM
           # Los scripts de Bash se encargarán de parsearlo internamente
-          SECURE_VAULT: ${{ secrets.CORPORATE_AWS_VAULT }}
+          SECURE_VAULT: ${{ secrets.SECURE_VAULT }}
         run: |
           # 1. Asegurar permisos de ejecución de forma absoluta usando variables de entorno de GitHub
           chmod +x $GITHUB_WORKSPACE/src/templates-cicd/*.sh
