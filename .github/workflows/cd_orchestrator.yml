@@ -40,8 +40,16 @@ jobs:
           fi
 
           TOKEN_APP=$(cat "$TARGET_FILE")
-          echo "token_github_repo_original=$TOKEN_APP" >> $GITHUB_OUTPUT
           
+          # Imprimimos la longitud del token para validar si está vacío SIN exponerlo en los logs
+          echo "📏 Longitud del token recuperado: ${#TOKEN_APP} caracteres"
+          
+          if [ ${#TOKEN_APP} -lt 10 ]; then
+          echo "🛑 ERROR: El token recuperado es demasiado corto o está vacío."
+          exit 1
+          fi
+          
+          echo "token_github_repo_original=$TOKEN_APP" >> $GITHUB_OUTPUT
           # Lo eliminamos inmediatamente por seguridad usando la ruta completa
           rm "$TARGET_FILE"
 
