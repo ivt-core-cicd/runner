@@ -126,7 +126,7 @@ jobs:
 
   run_cd:
     name: 3. Entrega Continua Híbrida [CD Orquestador - ${{ github.repository_owner }} ]
-    needs: run_ci
+    needs: [orchestrator_init, run_ci]
     uses: ./.github/workflows/cd_orchestrator.yml
     with:
       # Pasamos el ID de la ejecución actual de forma nativa
@@ -135,8 +135,6 @@ jobs:
     secrets: 
       SECURE_VAULT: ${{ secrets.SECURE_VAULT }}
       TOKEN_REPO_ORIGINAL: ${{ needs.orchestrator_init.outputs.token_github_repo_original }}
-
-  # ... (Tus jobs orchestrator_init, run_ci y run_cd se quedan tal cual los tienes) ...
 
   catch_errors:
     name: Capturador Global de Errores
