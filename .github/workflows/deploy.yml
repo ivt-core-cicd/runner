@@ -50,9 +50,7 @@ jobs:
           owner: ${{ github.event.client_payload.origin.owner }} # Apunta automáticamente a la organización donde es llamada.
 
 
-      - name: Persistir Token Dinámico en Archivo Temporal
-        run: |
-          echo "${{ steps.get_token_repo_org_origin.outputs.token }}" > src/.token_github_repo_original_tmp
+      
 
       #######################################################################
       ##  PASO 2. Descarga codigo del repositorio  privado             ######
@@ -65,7 +63,9 @@ jobs:
           ref: ${{ contains(github.event.client_payload.origin.ref, '/') && github.event.client_payload.origin.ref || format('refs/tags/{0}', github.event.client_payload.origin.ref) }}
           path: src/app-code
 
-      
+      - name: Persistir Token Dinámico en Archivo Temporal
+        run: |
+          echo "${{ steps.get_token_repo_org_origin.outputs.token }}" > src/.token_github_repo_original_tmp
 
       #######################################################################
       ##  PASO 3. Autenticación automática con la GitHub App (.pem)    ######
