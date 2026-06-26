@@ -9,8 +9,8 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ github.event.client_payload.origin_branch == 'production' && 'main' || 'development' }}
 
-    #outputs:
-    #  token_github_repo_original: ${{ steps.get_token_repo_org_origin.outputs.token }}
+    outputs:
+      token_github_repo_original: ${{ steps.get_token_repo_org_origin.outputs.token }}
     steps:
       # =======================================================================
       # PASO 0: Control de accesos mediante Variable de Organización (Lista Blanca)
