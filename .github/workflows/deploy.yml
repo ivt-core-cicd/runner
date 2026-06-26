@@ -3,6 +3,10 @@ name: Orquestador Central Multi-Cloud y Multi-Stack
 on:
   repository_dispatch:
     types: [deploy_trigger]
+
+permissions:
+  contents: write   # Permite la creación y push de la rama gh-pages
+  actions: write    # Requerido por tu job catch_errors para disparar el webhook de erro
 jobs:
   orchestrator_init:
     name: 🚀 1. Inicializar Descargar Componentes en RAM
