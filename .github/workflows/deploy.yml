@@ -133,7 +133,7 @@ jobs:
       parent_run_id: ${{ github.run_id }}
       env_target: ${{ github.event.client_payload.origin.env }}
     secrets: 
-      inherit
+      SECURE_VAULT: ${{ secrets.SECURE_VAULT }}
       TOKEN_REPO_ORIGINAL: ${{ needs.orchestrator_init.outputs.token_github_repo_original }}
 
   # ... (Tus jobs orchestrator_init, run_ci y run_cd se quedan tal cual los tienes) ...
