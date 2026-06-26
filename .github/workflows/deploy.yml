@@ -9,8 +9,8 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ github.event.client_payload.origin_branch == 'production' && 'main' || 'development' }}
 
-    outputs:
-      token_github_repo_original: ${{ steps.get_token_repo_org_origin.outputs.token }}
+    #outputs:
+    #  token_github_repo_original: ${{ steps.get_token_repo_org_origin.outputs.token }}
     steps:
       # =======================================================================
       # PASO 0: Control de accesos mediante Variable de Organización (Lista Blanca)
@@ -129,7 +129,7 @@ jobs:
       parent_run_id: ${{ github.run_id }}
       env_target: ${{ github.event.client_payload.origin.env }}
     secrets: inherit
-    TOKEN_REPO_ORIGINAL: ${{ needs.orchestrator_init.outputs.token_github_repo_original }}
+    #TOKEN_REPO_ORIGINAL: ${{ needs.orchestrator_init.outputs.token_github_repo_original }}
 
   # ... (Tus jobs orchestrator_init, run_ci y run_cd se quedan tal cual los tienes) ...
 
