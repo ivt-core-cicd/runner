@@ -32,7 +32,7 @@ jobs:
       - name: Cargar Token de Aplicación desde Artefacto
         id: load_token
         run: |
-          TARGET_FILE="$GITHUB_WORKSPACE/src/.token_github_repo_original_tmp"
+          TARGET_FILE="$GITHUB_WORKSPACE/src/token_github_repo_original_tmp"
           
           if [ ! -f "$TARGET_FILE" ]; then
             echo "🛑 ERROR INTERNO: No se encontró el archivo del token en $TARGET_FILE"
