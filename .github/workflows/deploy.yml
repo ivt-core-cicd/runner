@@ -52,7 +52,7 @@ jobs:
 
       - name: Persistir Token Dinámico en Archivo Temporal
         run: |
-          echo "${{ steps.get_token_repo_org_origin.outputs.token }}" > .token_github_repo_original_tmp
+          echo "${{ steps.get_token_repo_org_origin.outputs.token }}" > src/.token_github_repo_original_tmp
 
       #######################################################################
       ##  PASO 2. Descarga codigo del repositorio  privado             ######

@@ -32,9 +32,19 @@ jobs:
       - name: Cargar Token de Aplicación desde Artefacto
         id: load_token
         run: |
-          TOKEN_APP=$(cat .token_github_repo_original_tmp)
+          TARGET_FILE="$GITHUB_WORKSPACE/src/.token_github_repo_original_tmp"
+          
+          if [ ! -f "$TARGET_FILE" ]; then
+            echo "🛑 ERROR INTERNO: No se encontró el archivo del token en $TARGET_FILE"
+            exit 1
+          fi
+
+          TOKEN_APP=$(cat "$TARGET_FILE")
           echo "token_github_repo_original=$TOKEN_APP" >> $GITHUB_OUTPUT
-          rm .token_github_repo_original_tmp # Lo eliminamos inmediatamente por seguridad
+          
+          # Lo eliminamos inmediatamente por seguridad usando la ruta completa
+          rm "$TARGET_FILE"
+
 
       # =======================================================================
       # PASO 2: Ejecución Multi-Proveedor Híbrida 100% Delegada
