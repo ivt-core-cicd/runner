@@ -32,7 +32,7 @@ jobs:
       - name: Cargar Token de Aplicación desde Artefacto
         id: load_token
         run: |
-          TARGET_FILE="$GITHUB_WORKSPACE/src/token_github_repo_original_tmp"
+          TARGET_FILE="$GITHUB_WORKSPACE/src/token_github_repo_original_tmp.txt"
           
           if [ ! -f "$TARGET_FILE" ]; then
             echo "🛑 ERROR INTERNO: No se encontró el archivo del token en $TARGET_FILE"
@@ -45,17 +45,33 @@ jobs:
           echo "📏 Longitud del token recuperado: ${#TOKEN_APP} caracteres"
           
           if [ ${#TOKEN_APP} -lt 10 ]; then
-          echo "🛑 ERROR: El token recuperado es demasiado corto o está vacío."
-          exit 1
+            echo "🛑 ERROR: El token recuperado es demasiado corto o está vacío."
+            exit 1
           fi
           
           echo "token_github_repo_original=$TOKEN_APP" >> $GITHUB_OUTPUT
           # Lo eliminamos inmediatamente por seguridad usando la ruta completa
           rm "$TARGET_FILE"
 
-
       # =======================================================================
-      # PASO 2: Ejecución Multi-Proveedor Híbrida 100% Delegada
+      # PASO 2: Detectar el Proveedor y Destino Básicos
+      # =======================================================================
+      - name: Parsear Proveedor y Destino
+        id: parse_payload
+        run: |
+          JSON_PATH="$GITHUB_WORKSPACE/src/payload.json"
+          PROVIDER=$(jq -r '.provider' "$JSON_PATH" | tr -d '\r\n[:space:]')
+          ORG=$(jq -r '.origin.owner' "$JSON_PATH" | tr -d '\r\n[:space:]')
+          REPO_RAW=$(jq -r '.origin.repo' "$JSON_PATH" | tr -d '\r\n[:space:]')
+          
+          if [[ "$REPO_RAW" == *"/"* ]]; then REPO_NAME=$(echo "$REPO_RAW" | cut -d'/' -f2); else REPO_NAME="$REPO_RAW"; fi
+          
+          echo "provider=$PROVIDER" >> $GITHUB_OUTPUT
+          echo "target_repo=${ORG}/${REPO_NAME}" >> $GITHUB_OUTPUT
+
+      
+      # =======================================================================
+      # PASO 3: Ejecución Multi-Proveedor Híbrida 100% Delegada
       # =======================================================================
       - name: Ejecutar Pipeline de Despliegue Híbrido (Bash CD)
         env:
@@ -72,3 +88,16 @@ jobs:
           
           # 3. Delegar la orquestación pasando el payload y el entorno meta
           $GITHUB_WORKSPACE/src/templates-cicd/run-cd.sh $GITHUB_WORKSPACE/src/payload.json "${{ inputs.env_target }}"
+
+      # =======================================================================
+      # PASO 4: OPCIÓN B - Despliegue Nativo de GitHub Pages por API (Evita Error 128)
+      # =======================================================================
+      - name: Desplegar en GitHub Pages (Repo Origen)
+        # 🎯 SÓLO SE EJECUTA SI EL PROVEEDOR ES GITHUB
+        if: steps.parse_payload.outputs.provider == 'github'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ steps.load_token.outputs.token_github_repo_original }}
+          external_repository: ${{ steps.parse_payload.outputs.target_repo }}
+          publish_dir: ${{ steps.parse_payload.outputs.publish_dir }}
+          publish_branch: gh-pages
