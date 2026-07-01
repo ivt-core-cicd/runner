@@ -94,10 +94,35 @@ jobs:
       # =======================================================================
       - name: Desplegar en GitHub Pages (Repo Origen)
         # 🎯 SÓLO SE EJECUTA SI EL PROVEEDOR ES GITHUB
-        if: steps.parse_payload.outputs.provider == 'github'
+        if: steps.parse_payload.outputs.provider == 'githubpage'
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ steps.load_token.outputs.token_github_repo_original }}
           external_repository: ${{ steps.parse_payload.outputs.target_repo }}
           publish_dir: ${{ steps.parse_payload.outputs.publish_dir }}
           publish_branch: gh-pages
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+          nojekyll: true
+      
+      # =======================================================================
+      # PASO 5: Forzar la Activación Automática (Ahora que la rama YA existe)
+      # =======================================================================
+      - name: Garantizar Activación de GitHub Pages vía API
+        if: steps.parse_payload.outputs.provider == 'githubpage'
+        run: |
+          TARGET_REPO="${{ steps.parse_payload.outputs.target_repo }}"
+          TOKEN="${{ steps.load_token.outputs.token_github_repo_original }}"
+          
+          echo "📡 Forzando activación de Pages para: $TARGET_REPO..."
+          
+          # Esperamos 3 segundos rápidos para asegurar la propagación de la rama remota
+          sleep 3
+          
+          # Enviamos la petición de activación
+          curl -s -X POST \
+            -H "Authorization: token $TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${TARGET_REPO}/pages" \
+            -d '{"source":{"branch":"gh-pages","path":"/"}}' \
+            -o /dev/null -w "%{http_code}" | grep -E "201|409" || true
