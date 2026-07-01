@@ -48,7 +48,7 @@ jobs:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
           owner: ${{ github.event.client_payload.origin.owner }} # Apunta automáticamente a la organización donde es llamada.
-
+          repositories: ${{ github.event.client_payload.component_name }}
       #######################################################################
       ##  PASO 2. Descarga codigo del repositorio  privado             ######
       #######################################################################
