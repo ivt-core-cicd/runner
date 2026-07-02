@@ -150,7 +150,7 @@ jobs:
     secrets: inherit
 
   catch_errors:
-    name: 🔥 ERROR Capturador Global de Errores
+    name: 🛑 ERROR  Capturandor Global de Errores
     needs: [orchestrator_init, run_ci, run_cd]
     #  CLAVE: Solo se ejecuta si ALGUNO de los 3 jobs anteriores falló o fue cancelado
     if: failure() || cancelled()
