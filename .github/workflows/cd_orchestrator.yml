@@ -70,15 +70,17 @@ jobs:
           echo "target_repo=${ORG}/${REPO_NAME}" >> $GITHUB_OUTPUT
 
       
-      # =======================================================================
-      # PASO 3: Ejecución Multi-Proveedor Híbrida 100% Delegada
-      # =======================================================================
+      # ========================================================================
+      # PASO 3: Ejecución Multi-Proveedor Híbrida 100% Delegada              === 
+      # ========================================================================
       - name: Ejecutar Pipeline de Despliegue Híbrido (Bash CD)
         env:
           # Inyectamos el Vault completo como variable de entorno segura en RAM
           # Los scripts de Bash se encargarán de parsearlo internamente
           SECURE_VAULT: ${{ secrets.SECURE_VAULT }}
           TOKEN_REPO_ORIGINAL: ${{ steps.load_token.outputs.token_github_repo_original }}
+          ORG_CORE_OWNER: ${{ github.repository_owner }}
+          REPO_CORE_NAME: ${{ github.event.repository.name}}
         run: |
           # 1. Asegurar permisos de ejecución de forma absoluta usando variables de entorno de GitHub
           chmod +x $GITHUB_WORKSPACE/src/templates-cicd/*.sh

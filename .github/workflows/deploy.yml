@@ -38,9 +38,9 @@ jobs:
             exit 1
           fi
 
-      #######################################################################
-      ##  PASO 1. Autenticación automática con la GitHub App (.pem)    ######
-      #######################################################################
+      ################################################################################
+      ##  PASO 1. Autenticación automática : Generar Token repositorio Origen   ######
+      ################################################################################
       - name: Generar Token de Accesos para descarga de codigo desde ${{ github.event.client_payload.origin.owner }}.
         id: get_token_repo_org_origin
         uses: actions/create-github-app-token@v1
@@ -49,8 +49,9 @@ jobs:
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
           owner: ${{ github.event.client_payload.origin.owner }} # Apunta automáticamente a la organización de donde es llamada.
           repositories: ${{ github.event.client_payload.component_name }}
+
       #######################################################################
-      ##  PASO 2. Descarga codigo del repositorio  privado             ######
+      ##  PASO 2. Descarga codigo del repositorio  Origen              ######
       #######################################################################
       - name: Descargar Codigo Origen
         uses: actions/checkout@v4
@@ -60,13 +61,14 @@ jobs:
           ref: ${{ contains(github.event.client_payload.origin.ref, '/') && github.event.client_payload.origin.ref || format('refs/tags/{0}', github.event.client_payload.origin.ref) }}
           path: src/app-code
 
-      - name: Persistir Token Dinámico en Archivo Temporal
+      #persistir token de acceso a repo de origen
+      - name: Persistir Token Dinámico en a repositorio de origen
         run: |
           echo "${{ steps.get_token_repo_org_origin.outputs.token }}" > src/token_github_repo_original_tmp.txt
 
-      #######################################################################
-      ##  PASO 3. Autenticación automática con la GitHub App (.pem)    ######
-      #######################################################################
+      ########################################################################################
+      ##  PASO 3. Autenticación automática Generar Token Repositorio publico central    ######
+      ########################################################################################
       - name: Generar Token de Accesos para plantillas ${{ github.repository_owner }}.
         id: get_token_org_core
         uses: actions/create-github-app-token@v1
@@ -74,6 +76,11 @@ jobs:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }} # Apunta automáticamente a la organización donde es llamada.
+      
+      #persistir token de acceso a repo central
+      - name: Persistir Token Dinámico a organizacion central -  repositorio publico
+        run: |
+          echo "${{ steps.get_token_org_core.outputs.token }}" > src/token_github_repo_central_tmp.txt
 
       #######################################################################
       ##  PASO 3. Descarga templates  de despleigue cicd               ######
