@@ -77,11 +77,9 @@ jobs:
           private-key: ${{ secrets.APP_PRIVATE_KEY }} 
           # Apunta automáticamente a la organización donde es llamada.      
           owner: ${{ github.repository_owner }} 
-          repositories: |
-            templates_cicd
-            templates_iac
-            runner
-            ${{ github.event.repository.name }}
+          repositories: "templates_cicd,templates_iac,runner"
+            
+            
           
      
       #persistir token de acceso a repo central
@@ -141,7 +139,7 @@ jobs:
     secrets: inherit
 
   run_cd:
-    name: 3. Entrega Continua Híbrida [CD Orquestador - ${{ github.repository_owner }} ]
+    name: 3. Entrega Continua [CD Orquestador - ${{ github.repository_owner }} ]
     needs: run_ci
 
     uses: ./.github/workflows/cd_orchestrator.yml
