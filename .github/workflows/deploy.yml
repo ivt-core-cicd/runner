@@ -74,9 +74,16 @@ jobs:
         uses: actions/create-github-app-token@v1
         with:
           app-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }} # Apunta automáticamente a la organización donde es llamada.
-      
+          private-key: ${{ secrets.APP_PRIVATE_KEY }} 
+          # Apunta automáticamente a la organización donde es llamada.      
+          owner: ${{ github.repository_owner }} 
+          repositories: |
+            templates_cicd
+            templates_iac
+            runner
+            ${{ github.event.repository.name }}
+          
+     
       #persistir token de acceso a repo central
       - name: Persistir Token Dinámico a organizacion central -  repositorio publico
         run: |
