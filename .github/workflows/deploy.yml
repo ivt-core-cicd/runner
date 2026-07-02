@@ -9,7 +9,7 @@ permissions:
   actions: write # Requerido por tu job catch_errors para disparar el webhook de erro
 jobs:
   orchestrator_init:
-    name: 🚀 1. Inicializar Descargar Componentes en RAM
+    name: 1. Inicializar Descargar Componentes en RAM
     runs-on: ubuntu-latest
     environment: ${{ github.event.client_payload.origin_branch == 'production' && 'main' || 'development' }}
 
@@ -150,9 +150,9 @@ jobs:
     secrets: inherit
 
   catch_errors:
-    name: Capturador Global de Errores
+    name: 🔥 ERROR Capturador Global de Errores
     needs: [orchestrator_init, run_ci, run_cd]
-    # 🔥 CLAVE: Solo se ejecuta si ALGUNO de los 3 jobs anteriores falló o fue cancelado
+    #  CLAVE: Solo se ejecuta si ALGUNO de los 3 jobs anteriores falló o fue cancelado
     if: failure() || cancelled()
     runs-on: ubuntu-latest
     permissions:
