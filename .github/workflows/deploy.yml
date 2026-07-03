@@ -58,7 +58,8 @@ jobs:
         with:
           repository: ${{ github.event.client_payload.origin.repo }}
           token: ${{ steps.get_token_repo_org_origin.outputs.token }}
-          ref: ${{ contains(github.event.client_payload.origin.ref, '/') && github.event.client_payload.origin.ref || format('refs/tags/{0}', github.event.client_payload.origin.ref) }}
+          #ref: ${{ contains(github.event.client_payload.origin.ref, '/') && github.event.client_payload.origin.ref || format('refs/tags/{0}', github.event.client_payload.origin.ref) }}
+          ref: ${{ github.event.client_payload.origin.sha || github.event.client_payload.origin.ref }}
           path: src/app-code
 
       #persistir token de acceso a repo de origen
