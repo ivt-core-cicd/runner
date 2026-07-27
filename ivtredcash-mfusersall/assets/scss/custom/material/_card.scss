@@ -1,0 +1,18 @@
+.mat-card {
+    box-sizing: border-box;
+    padding: 0px !important; // Añadir padding a todas las tarjetas
+    box-shadow: 1px 0 20px #00000014 !important; // Aplicar la sombra personalizada
+    overflow: hidden !important;
+    margin-bottom: 1.25rem !important;
+}
+
+.mat-card .mat-card-header {
+    padding: 12px 26px !important;
+}
+
+.mat-card-actions {
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+    padding: 10px 0px 10px 30px !important;
+    margin: 0px !important;
+}
