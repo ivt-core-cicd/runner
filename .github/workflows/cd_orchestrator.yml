@@ -49,21 +49,21 @@ jobs:
           cd $GITHUB_WORKSPACE/src/app-code
           
           # 3. Delegar la orquestación pasando el payload y el entorno meta
-          $GITHUB_WORKSPACE/src/templates-cicd/run-cd.sh $GITHUB_WORKSPACE/src/payload.json "${{ inputs.env_target }}"
+          $GITHUB_WORKSPACE/src/templates-cicd/run-cd.sh "${{ inputs.env_target }}"
 
           
-          TARGET_REPO="${{ steps.parse_payload.outputs.target_repo }}"
-          TOKEN="${{ steps.load_token.outputs.token_github_repo_original }}"
+          #TARGET_REPO="${{ steps.parse_payload.outputs.target_repo }}"
+          #TOKEN="${{ steps.load_token.outputs.token_github_repo_original }}"
           
-          echo "📡 Forzando activación de Pages para: $TARGET_REPO..."
+          #echo "[CD ORCHESTRATOR] Forzando activación de Pages para: $TARGET_REPO..."
           
           # Esperamos 3 segundos rápidos para asegurar la propagación de la rama remota
-          sleep 3
+          # sleep 3
           
           # Enviamos la petición de activación
-          curl -s -X POST \
-            -H "Authorization: token $TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/${TARGET_REPO}/pages" \
-            -d '{"source":{"branch":"gh-pages","path":"/"}}' \
-            -o /dev/null -w "%{http_code}" | grep -E "201|409" || true
+          # curl -s -X POST \
+          #  -H "Authorization: token $TOKEN" \
+          #  -H "Accept: application/vnd.github+json" \
+          #  "https://api.github.com/repos/${TARGET_REPO}/pages" \
+          #  -d '{"source":{"branch":"gh-pages","path":"/"}}' \
+          #  -o /dev/null -w "%{http_code}" | grep -E "201|409" || true

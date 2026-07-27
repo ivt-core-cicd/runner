@@ -4,6 +4,14 @@ on:
   repository_dispatch:
     types: [deploy_trigger]
 
+# Evita condiciones de carrera: si el mismo componente+ambiente dispara un
+# segundo deploy mientras el primero sigue corriendo, se cancela el viejo
+# a favor del nuevo. Deploys de otros componentes/repos/orgs no se ven
+# afectados (cada uno tiene su propio group).
+concurrency:
+  group: deploy-${{ github.event.client_payload.component_name }}-${{ github.event.client_payload.origin.env }}
+  cancel-in-progress: true
+
 permissions:
   contents: write # Permite la creación y push de la rama gh-pages
   actions: write # Requerido por tu job catch_errors para disparar el webhook de erro
@@ -58,9 +66,9 @@ jobs:
         with:
           repository: ${{ github.event.client_payload.origin.repo }}
           token: ${{ steps.get_token_repo_org_origin.outputs.token }}
-          #ref: ${{ contains(github.event.client_payload.origin.ref, '/') && github.event.client_payload.origin.ref || format('refs/tags/{0}', github.event.client_payload.origin.ref) }}
           ref: ${{ github.event.client_payload.origin.sha || github.event.client_payload.origin.ref }}
           path: src/app-code
+          fetch-depth: 0
 
       #persistir token de acceso a repo de origen
       - name: Persistir Token Dinámico en a repositorio de origen
