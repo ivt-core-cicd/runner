@@ -47,7 +47,7 @@ jobs:
           chmod +x $GITHUB_WORKSPACE/src/templates-cicd/*.sh
           
           # 2. Posicionarse en el código de la aplicación
-          cd $GITHUB_WORKSPACE/src/app-code
+          cd $GITHUB_WORKSPACE/src
           
           # 3. Delegar la orquestación pasando el payload y el entorno meta
           $GITHUB_WORKSPACE/src/templates-cicd/run-cd.sh "${{ inputs.env_target }}"
