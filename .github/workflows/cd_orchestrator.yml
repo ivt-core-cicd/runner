@@ -17,6 +17,7 @@ jobs:
     # Vincula entornos protegidos de forma dinámica
     environment: ${{ inputs.env_target == 'production' && 'main' || inputs.env_target }}
     permissions:
+      id-token: write
       contents: write
     steps:
       # =======================================================================
