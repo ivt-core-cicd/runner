@@ -11,10 +11,58 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
       rel="stylesheet"
     />
-    <script type="module" crossorigin src="/assets/index-7gWUBVv4.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-DfyUC0nZ.css">
+    <style>
+      /*
+        Fondo y loader iniciales, pintados con HTML/CSS puro antes de que cargue el JS.
+        Evita la pantalla negra/vacía mientras el bundle de React se descarga y ejecuta.
+        React reemplaza el contenido de #root automáticamente al montar, así que esto
+        desaparece solo, sin tocar nada más en el código de la app.
+      */
+      html,
+      body {
+        background-color: #111827;
+        margin: 0;
+      }
+
+      #root {
+        min-height: 100vh;
+        position: relative;
+      }
+
+      #initial-loader {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+      }
+
+      .initial-loader-spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid rgba(255, 255, 255, 0.2);
+        border-top-color: #0098ff;
+        border-radius: 50%;
+        animation: initial-loader-spin 0.8s linear infinite;
+      }
+
+      @keyframes initial-loader-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+    <script type="module" crossorigin src="/assets/index-Bw2XnrAt.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-DAN9Jb1W.css">
   </head>
   <body>
-    <div id="root">test</div>
+    <div id="root">
+      <div id="initial-loader" aria-hidden="true">
+        <div class="initial-loader-spinner"></div>
+      </div>
+    </div>
   </body>
 </html>
