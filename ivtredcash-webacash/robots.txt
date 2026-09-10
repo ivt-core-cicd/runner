@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://ivtredcash-webacash.netlify.app/sitemap.xml
+Sitemap: https://agentecash.com/sitemap.xml
